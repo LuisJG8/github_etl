@@ -4,7 +4,7 @@ import time
 from github import Auth, Github
 
 
-api_token = 
+api_token =
 auth = Auth.Token(api_token)
 gh = Github(auth=auth)
 
