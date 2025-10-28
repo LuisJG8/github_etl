@@ -14,7 +14,7 @@ services:
       interval: 30s 
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s
 
   redis:
     image: redis:7-alpine
@@ -32,6 +32,12 @@ services:
     build: .
     command: celery -A worker worker --loglevel=info
     env_file: .env
+    deploy:
+      resources:
+       limits:
+         memory: 512M
+       reservations:
+         memory: 256M
     depends_on:
       rabbitmq:
         condition: service_healthy
