@@ -11,19 +11,23 @@ print(api_token)
 auth = Auth.Token(api_token)
 gh = Github(auth=auth)
 
-time_before = datetime.now()
 
 repositories = gh.get_repos(since=0)
 
-counter = 0
-for repo in repositories:
-    counter += 1 
-    print((repo))
-    print(repo.stargazers_count)
+def get_github_data():
+    time_before = datetime.now()
 
-    if counter == 5:
-        break
+    counter = 0
+    for repo in repositories:
+        print(repo)
+        print(time_before)
+        print(repo.stargazers_count)
+        
+        counter += 1
+        if counter == 10:
+            break
+    
+    return f" the name of the repo is actually going to be {repo.full_name}" if repo else "idk man"
 
-time_after = datetime.now()
 
-print((time_after - time_before).total_seconds())
+get_github_data()

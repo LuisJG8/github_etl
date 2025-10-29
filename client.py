@@ -4,7 +4,7 @@ from worker import get_github_data, app
 
 time.sleep(5)
 
-result_future = get_github_data.delay(100)
+result_future = get_github_data.delay()
 result = AsyncResult(result_future.id, app=app)
 
 print('Done')
