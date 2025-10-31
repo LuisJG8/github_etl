@@ -1,11 +1,6 @@
 import os
-import time 
 import random 
-
 from celery import Celery
-import os 
-import asyncio
-import time
 from datetime import datetime
 from github import Auth, Github
 from dotenv import load_dotenv
@@ -26,19 +21,41 @@ gh = Github(auth=auth)
 
 repositories = gh.get_repos(since=0)
 
-
 @app.task
 def get_github_data():
-    mylist = []
-    
-    for repo in repositories:
-        print(repo)
-        print(repo.stargazers_count)
-        mylist.append(repo)
 
-        break
+    counter = 0
+
+    for repo in repositories:
+        try:
+            repo.full_name
+        except Exception as e:
+            print(e)
+            print("Full name not found")
+        else:
+            print(repo.full_name)
+
+        try:
+            repo.id
+        except Exception as e:
+            print(e)
+            print("Repo id not found")
+        else:
+            print(repo.id)
+
+        try:
+            repo.forks_count
+        except Exception as e:
+            print(e)
+            print("Repo id not found")
+        else:
+            print(repo.forks_count)
+        
+        counter += 1
+        if counter == 1005:
+            break
     
-    return f"the name is {mylist[0] if mylist else 'No repos found'}"
+    return f" the name of the repo is actually going to be {repo.full_name}" if repo else "idk man"
 
 # @app.task
 # def random_number(max_value):
