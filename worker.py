@@ -7,8 +7,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-
-
 app = Celery(
     'github_repos',
     broker = os.getenv('CELERY_BROKER_URL'),
