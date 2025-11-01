@@ -25,6 +25,7 @@ def github_api_data_point(repo_data_point):
         print(f"{repo_data_point} not found")
     else:
        print(repo_data_point)
+       
 
     return repo_data_point
 
@@ -34,15 +35,24 @@ def get_github_data():
 
     counter = 0
     for repo in repositories:
-        github_api_data_point(repo.full_name)
-        github_api_data_point(repo.topics)
-        github_api_data_point(repo.open_issues_count)
-        github_api_data_point(repo.language)
-        github_api_data_point(repo.watchers_count)
-        github_api_data_point(repo.id)
-        github_api_data_point(repo.forks_count)
-        github_api_data_point(repo.license)
-        github_api_data_point(repo.get_contents("README.md"))
+        # github_api_data_point(repo.full_name)
+        github_api_data_point(repo.stargazers_count)
+        github_api_data_point(repo.open_issues)
+        # github_api_data_point(repo.topics)
+        # github_api_data_point(repo.open_issues_count)
+        # github_api_data_point(repo.language)
+        # github_api_data_point(repo.watchers_count)
+        # github_api_data_point(repo.id)
+        # github_api_data_point(repo.forks_count)
+        # github_api_data_point(repo.license)
+        # github_api_data_point(repo.get_contents("README.md"))
+        # github_api_data_point(repo.created_at)
+        # github_api_data_point(repo.name)
+        # github_api_data_point(repo.private)
+        test = github_api_data_point(repo.get_contents(""))
+        github_api_data_point(repo.owner.avatar_url)
+        github_api_data_point(repo.description)
+        
 
         counter += 1
         break
