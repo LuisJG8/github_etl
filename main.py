@@ -9,7 +9,6 @@ from typing import List
 load_dotenv()
 
 
-
 api_token = os.getenv("GITHUB_API_TOKEN")
 auth = Auth.Token(api_token)
 gh = Github(auth=auth)
