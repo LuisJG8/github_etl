@@ -30,7 +30,7 @@ services:
 
   celery_worker:
     build: .
-    command: celery -A worker worker --loglevel=info
+    command: celery -A worker worker --loglevel=info --pool=solo --concurrency=4
     env_file: .env
     deploy:
       resources:

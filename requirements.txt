@@ -1,3 +1,5 @@
 celery[redis]
 PyGithub
 python-dotenv
+pydantic
+boto3

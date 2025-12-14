@@ -14,29 +14,6 @@ auth = Auth.Token(api_token)
 gh = Github(auth=auth)
 
 time_before = datetime.now()
- 
-class Repo(BaseModel):
-    id: int
-    name: str
-    full_name: str 
-    stars: int
-    open_issues_: List[str]
-    first_issue: str
-    updated_at: datetime
-    homepage: str 
-    allow_forking: bool
-    visibility: str 
-    topics: List[str]
-    open_issues: int
-    prog_language: str
-    watchers_count: int
-    fork_count: int
-    license: str 
-    repo_content: List[str]
-    creation_data: datetime 
-    owner_avatar: str
-    description: str 
-
 
 def github_api_data_point(repo_data_point):
     
@@ -54,58 +31,48 @@ repo_offset = 0
 repositories = gh.get_repos(since=repo_offset)
 
 
-def get_github_data(github_data_formatted: Repo):
+
+def get_github_data():
 
     counter = 0
     for repo in repositories:
-        print("Full Name:")
-        github_api_data_point(repo.full_name)
-        print("Stargazers Count:")
-        github_api_data_point(repo.stargazers_count)
-        print("Open Issues:")
-        github_api_data_point(repo.open_issues)
-        print("First Issue:")
-        github_api_data_point(repo.get_issue(number=1))
-        print("Updated At:")
-        github_api_data_point(repo.updated_at)
-        print("Homepage:")
-        github_api_data_point(repo.homepage)
-        print("Allow Forking:")
-        github_api_data_point(repo.allow_forking)
-        print("Visibility:")
-        github_api_data_point(repo.visibility)
-        print("Topics:")
-        github_api_data_point(repo.topics)
-        print("Open Issues Count:")
-        github_api_data_point(repo.open_issues_count)
-        print("Language:")
-        github_api_data_point(repo.language)
-        print("Watchers Count:")
-        github_api_data_point(repo.watchers_count)
-        print("ID:")
-        github_api_data_point(repo.id)
-        print("Forks Count:")
-        github_api_data_point(repo.forks_count)
-        print("License:")
-        github_api_data_point(repo.license)
-        print("README.md:")
-        github_api_data_point(repo.get_contents("README.md"))
-        print("Created At:")
-        github_api_data_point(repo.created_at)
-        print("Name:")
-        github_api_data_point(repo.name)
-        print("Owner User View Type:")
-        github_api_data_point(repo.owner.user_view_type)
-        print("Root Contents:")
-        github_api_data_point(type(repo.get_contents("")))
-        print("Owner Avatar URL:")
-        github_api_data_point(repo.owner.avatar_url)
-        print("Description:")
-        github_api_data_point(repo.description)
+        # Define all data points in a dictionary
+        data_points = {
+            "Full Name": repo.full_name,
+            "Stargazers Count": repo.stargazers_count,
+            "Updated At": repo.updated_at,
+            "Homepage": repo.homepage,
+            "Allow Forking": repo.allow_forking,
+            "Visibility": repo.visibility,
+            "Topics": repo.topics,
+            "Open Issues Count": repo.open_issues_count,
+            "Language": repo.language,
+            "Watchers Count": repo.watchers_count,
+            "ID": repo.id,
+            "Forks Count": repo.forks_count,
+            "License": repo.license,
+            "Created At": repo.created_at,
+            "Name": repo.name,
+            "Owner User View Type": repo.owner.user_view_type,
+            "Root Contents": repo.get_contents(""),
+            "Owner Avatar URL": repo.owner.avatar_url,
+            "Description": repo.description,
+        }
         
 
+        for label, value in data_points.items():
+            print(f"{label}:")
+            github_api_data_point(value)
+
+
         counter += 1
-        break
+        print()
+        time.sleep(5)
+        
+        if counter == 5:
+            break
+
+        return data_points
 
 
 get_github_data()
