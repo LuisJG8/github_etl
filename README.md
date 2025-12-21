@@ -1,0 +1,1 @@
+The goal of this project is to gather and process as much GitHub repository data as possible. End result example: https://console.cloud.google.com/marketplace/product/github/github-repos?project=hopeful-host-433510-a3
