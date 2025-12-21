@@ -53,7 +53,7 @@ services:
   client:
     build: .
     command: python client.py 
-    env_file: .env 
+    env_file: config/.env 
     depends_on:
       rabbitmq:
         condition: service_healthy

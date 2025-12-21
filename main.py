@@ -136,6 +136,7 @@ def get_github_data():
     for repo in repositories:
         github_data_points = {
             # ===== BASIC INFO =====
+            "Got_Data": todays_date if todays_date else None,
             "ID": repo.id if repo.id else None,
             "Name": repo.name if repo.name else None,
             "Full Name": repo.full_name if repo.full_name else None,
@@ -197,10 +198,7 @@ def get_github_data():
             "Owner URL": repo.owner.html_url if repo.owner else None,
             "Owner User View Type": repo.owner.user_view_type if repo.owner else None,
             "Owner Site Admin": repo.owner.site_admin if repo.owner else False,
-            
-            # ===== PARENT/SOURCE (for forks) =====
-            "Parent Full Name": repo.parent.full_name if repo.parent else None,
-            "Source Full Name": repo.source.full_name if repo.source else None,
+
         }
 
         repo_collection.append(github_data_points)
