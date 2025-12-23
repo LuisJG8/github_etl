@@ -1,10 +1,9 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
-import pika
 from datetime import datetime
 
 
-class RabbitMQ_Data_Validation:
+class RabbitMQ_Data_Validation(BaseModel):
     # ===== MESSAGE METADATA =====
     message_id: Optional[str] = Field(default=None, description="Unique message ID")
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())

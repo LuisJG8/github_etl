@@ -3,3 +3,4 @@ PyGithub
 python-dotenv
 pydantic
 boto3
+pika
