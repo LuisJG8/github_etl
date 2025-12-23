@@ -42,3 +42,5 @@ class RabbitMQ_Data_Validation(BaseModel):
     # ===== OWNER INFO =====
     owner_login: Optional[str] = None
     owner_type: Optional[str] = None
+
+    
