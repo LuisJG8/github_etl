@@ -22,19 +22,19 @@ s3_client = boto3.client(
 )
 
 
-app = Celery(
-    'github_repos',
-    broker = os.getenv('CELERY_BROKER_URL'),
-    backend = os.getenv('CELERY_BACKEND_URL')
-)
-
-
 def save_to_s3(data, file_directory):
     s3_client.put_object(
         Bucket=S3_BUCKET_NAME,
         Key=file_directory,
         Body=json.dumps(data, default=str)
     )
+
+
+app = Celery(
+    'github_repos',
+    broker = os.getenv('CELERY_BROKER_URL'),
+    backend = os.getenv('CELERY_BACKEND_URL')
+)
 
 
 api_token = os.getenv("GITHUB_API_TOKEN")
@@ -58,6 +58,7 @@ def get_github_data():
             # message_id and timestamp are handled by the Pydantic model defaults
 
             # ===== BASIC INFO =====
+            "got_data_at": todays_date if todays_date else None,
             "id": repo.id if repo.id else None,
             "name": repo.name if repo.name else None,
             "full_name": repo.full_name if repo.full_name else None,

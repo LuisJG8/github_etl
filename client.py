@@ -8,12 +8,11 @@ from typing import List
 from rb_queue.rabbitmq import publish_repo
 
 
-result_future = get_github_data.delay()
-result = AsyncResult(result_future.id, app=app)
+celery_task_get_repos = get_github_data.delay()
+result = AsyncResult(celery_task_get_repos.id, app=app)
 
 print('Done')
 print('The result state of the queue', result.state) 
-
 
 while True:
     if result.ready():
