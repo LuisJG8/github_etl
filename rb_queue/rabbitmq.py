@@ -1,5 +1,7 @@
 import os
-import pika 
+import pika
+import time 
+from pydantic import ValidationError
 from models.github import RabbitMQ_Data_Validation
 
 
@@ -8,7 +10,8 @@ RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 QUEUE_NAME = "github_repos"
 
-def get_conection():
+
+def get_connection():
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
     return pika.BlockingConnection(
         pika.ConnectionParameters(
@@ -20,22 +23,30 @@ def get_conection():
 
 
 def consume_repos(callback):
-    connection = get_conection()
+    connection = get_connection()
     channel = connection.channel()
     channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
     def on_message(ch, method, properties, body):
-        repo = RabbitMQ_Data_Validation.model_validate_json(body)
-        callback(repo)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        try:
+            repo = RabbitMQ_Data_Validation.model_validate_json(body)
+            callback(repo)
+            ch.basic_ack(delivery_tag=method.delivery_tag)
+        except ValidationError as e:
+            print(f"Validation Error: {e}")
+            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
     channel.basic_consume(queue=QUEUE_NAME, on_message_callback=on_message)
     channel.start_consuming()
 
+    time.sleep(5)
+
+    connection.close()
+
 
 def publish_repo(repo_data: dict):
     repo = RabbitMQ_Data_Validation(**repo_data)
-    connection = get_conection()
+    connection = get_connection()
     channel = connection.channel()
     channel.queue_declare(queue=QUEUE_NAME, durable=True)
     channel.basic_publish(
