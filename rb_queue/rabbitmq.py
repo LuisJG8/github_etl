@@ -37,11 +37,12 @@ def consume_repos(callback):
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
     channel.basic_consume(queue=QUEUE_NAME, on_message_callback=on_message)
-    channel.start_consuming()
-
-    time.sleep(5)
-
-    connection.close()
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        channel.stop_consuming()
+    finally:
+        connection.close()
 
 
 def publish_repo(repo_data: dict):

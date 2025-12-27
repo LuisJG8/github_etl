@@ -3,6 +3,7 @@ import random
 import json
 import boto3
 from celery import Celery
+from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github
 from dotenv import load_dotenv
@@ -10,6 +11,7 @@ from rb_queue.rabbitmq import publish_repo, consume_repos
 load_dotenv()
 
 
+logger = get_task_logger(__name__)
 todays_date = datetime.now().strftime("%m-%d-%Y")
 S3_BUCKET_NAME = "github-etl-data-bucket"
 
@@ -50,6 +52,7 @@ def get_github_data():
 
     repositories = gh.get_repos(since=0)
     rate_limit = gh.rate_limiting
+    logger.info(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
     for repo in repositories:
@@ -94,18 +97,20 @@ def get_github_data():
             "owner_type": repo.owner.type if repo.owner else None,
         }
 
+        # consume_repos(github_data_points)
+
         repo_collection.append(github_data_points)
 
         publish_repo(github_data_points)
 
         counter += 1
+        print(github_data_points)
         if counter == 5:
             break
 
 
     filekey = "github_repos/test.json"
     # s3_url = save_to_s3(repo_collection, filekey)
-    print(repo_collection)
+    logger.info(f"Processed {len(repo_collection)} repositories")
 
-
-print("data saved to s3")
+logger.info("Worker module loaded")
