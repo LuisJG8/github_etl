@@ -20,7 +20,6 @@ print('Done')
 print('The result state of the queue', result.state) 
 
 
-
 # while True:
 #     if result.ready():
 #         print('Getting the result', result.get())
