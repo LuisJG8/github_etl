@@ -4,8 +4,6 @@
 # from datetime import datetime
 # from github import Auth, Github
 # from dotenv import load_dotenv
-# from pydantic import BaseModel
-
 
 # api_token = os.getenv("GITHUB_API_TOKEN")
 # auth = Auth.Token(api_token)
