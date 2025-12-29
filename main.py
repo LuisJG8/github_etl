@@ -5,8 +5,6 @@
 # from github import Auth, Github
 # from dotenv import load_dotenv
 # from pydantic import BaseModel
-# from typing import List
-# load_dotenv()
 
 
 # api_token = os.getenv("GITHUB_API_TOKEN")
