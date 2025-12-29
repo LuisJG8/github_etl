@@ -2,8 +2,8 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management
-    env_file:
-      - ./config/.env
+    env_file: 
+     - ./config/.env
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
@@ -30,6 +30,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    restart: on-failure
 
   celery_worker:
     build: .
@@ -47,6 +48,19 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+  flower:
+    build: .
+    command: celery -A worker flower --port=5555
+    ports:
+      - "5555:5555"
+    env_file: ./config/.env
     depends_on:
       rabbitmq:
         condition: service_healthy

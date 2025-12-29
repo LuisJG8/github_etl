@@ -6,10 +6,10 @@ from datetime import datetime
 class RabbitMQ_Data_Validation(BaseModel):
     # ===== MESSAGE METADATA =====
     message_id: Optional[str] = Field(default=None, description="Unique message ID")
-    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    got_data_in: str = Field(default_factory=lambda: datetime.now().isoformat())
     
     # ===== BASIC INFO =====
-    id: int = Field(..., description="Repository ID")
+    repo_id: int = Field(..., description="Repository ID")
     name: str = Field(..., min_length=1, description="Repository name")
     full_name: str = Field(..., description="Full name (owner/repo)")
     description: Optional[str] = None
@@ -42,5 +42,3 @@ class RabbitMQ_Data_Validation(BaseModel):
     # ===== OWNER INFO =====
     owner_login: Optional[str] = None
     owner_type: Optional[str] = None
-
-    
