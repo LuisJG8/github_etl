@@ -7,7 +7,7 @@ from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github
 from dotenv import load_dotenv
-from rb_queue.rabbitmq import publish_repo, consume_repos
+from rb_queue.rabbitmq import publish_repo
 load_dotenv()
 
 
@@ -43,9 +43,9 @@ api_token = os.getenv("GITHUB_API_TOKEN")
 auth = Auth.Token(api_token)
 gh = Github(auth=auth)
 
-
-@app.task
-def get_github_data():
+# bind = True allows to get task data, like task id
+@app.task(bind=True)
+def get_github_data(self):
 
     counter = 0
     repo_collection = []
@@ -59,10 +59,11 @@ def get_github_data():
         github_data_points = {
             # ===== MESSAGE METADATA =====
             # message_id and timestamp are handled by the Pydantic model defaults
+            "message_id": self.request.id,
 
             # ===== BASIC INFO =====
-            "got_data_at": todays_date if todays_date else None,
-            "id": repo.id if repo.id else None,
+            "got_data_in": todays_date if todays_date else None,
+            "repo_id": repo.id if repo.id else None,
             "name": repo.name if repo.name else None,
             "full_name": repo.full_name if repo.full_name else None,
             "description": repo.description if repo.description else None,
@@ -96,8 +97,6 @@ def get_github_data():
             "owner_login": repo.owner.login if repo.owner else None,
             "owner_type": repo.owner.type if repo.owner else None,
         }
-
-        # consume_repos(github_data_points)
 
         repo_collection.append(github_data_points)
 
