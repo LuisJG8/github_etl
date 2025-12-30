@@ -24,15 +24,10 @@ def get_connection():
 
 
 def publish_repo(repo_data: dict, channel_):
-    repo = RabbitMQ_Data_Validation(**repo_data)
+    pass
     
-    channel_.queue_declare(queue=QUEUE_NAME, durable=True)
-    channel_.basic_publish(
-        exchange='',
-        routing_key=QUEUE_NAME,
-        body=repo.model_dump_json(),
-        properties=pika.BasicProperties(delivery_mode=2)
-    )
+
+
 
 
 def consume_repos(callback):

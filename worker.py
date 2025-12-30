@@ -56,9 +56,14 @@ def get_github_data(self):
     rate_limit = gh.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
+    connection = None
+    channel = None
+
     try:
         connection = get_connection()
         channel = connection.channel()  
+        
+        channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
         for repo in repositories:
             github_data_points = {
@@ -109,8 +114,6 @@ def get_github_data(self):
 
             repo_v = RabbitMQ_Data_Validation(**github_data_points)
 
-            channel.queue_declare(queue=QUEUE_NAME, durable=True)
-
             channel.basic_publish(
                 exchange='',
                 routing_key=QUEUE_NAME,
@@ -124,13 +127,16 @@ def get_github_data(self):
             print(github_data_points)
             if counter == 5:
                 break
-            
+
 
     except Exception as e:
         print(e)
 
     finally:
-        connection.close()
+        if connection:
+            connection.close()
+        else:
+            print("The connection does not exist")
 
 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")

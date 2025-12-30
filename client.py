@@ -11,9 +11,9 @@ celery_task_get_repos = get_github_data.delay()
 result = AsyncResult(celery_task_get_repos.id, app=app)
 
 # Getting the data from RabbitMQ, note: convert to lambda
-def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
-    print("This is the data from the RMQ: ", repo_data)
-    
+# def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
+#     print("This is the data from the RMQ: ", repo_data)
+
 print("Waiting for Celery task to complete")
 
 while True:
@@ -27,7 +27,7 @@ while True:
         else:
             print('Done. The result state of the queue', result.state)
 
-            consume_repos(callback=rabbitmq_process_data)
+            consume_repos(callback = lambda repo_data: print("This is the data from the RMQ: ", repo_data))
             break
     else:
         print("Results are not ready")
