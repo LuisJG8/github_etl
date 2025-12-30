@@ -10,23 +10,20 @@ from pydantic_models.github import RabbitMQ_Data_Validation
 celery_task_get_repos = get_github_data.delay()
 result = AsyncResult(celery_task_get_repos.id, app=app)
 
-# Getting the data from RabbitMQ, note: convert to lambda
-def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
-    print("This is the data from the RMQ: ", repo_data)
+while True:
+    if result.ready():
+        try:
+            print('Getting the result')
+            result.get()
+        except Exception as e:
+            print(e)
+            break
+        else:
+            print('Done. The result state of the queue', result.state)
 
-
-print("Waiting for Celery task to complete")
-if result.ready():
-    try:
-        print('Getting the result')
-        result.get()
-    except Exception as e:
-        print(e)
+            consume_repos(callback=rabbitmq_process_data)
+            break
     else:
-        print('Done. The result state of the queue', result.state)
-
-        consume_repos(callback=rabbitmq_process_data)
-else:
-    print("Results are not ready")
-    print(result.state)
-    time.sleep(1)
+        print("Results are not ready")
+        print(result.state)
+        time.sleep(1)
