@@ -14,6 +14,7 @@ result = AsyncResult(celery_task_get_repos.id, app=app)
 def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
     print("This is the data from the RMQ: ", repo_data)
 
+<<<<<<< HEAD
 
 print("Waiting for Celery task to complete")
 
