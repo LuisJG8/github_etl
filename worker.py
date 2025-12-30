@@ -46,7 +46,6 @@ gh = Github(auth=auth)
 # bind = True allows to get task data, like task id
 @app.task(bind=True)
 def get_github_data(self):
-
     counter = 0
     repo_collection = []
 
@@ -100,16 +99,15 @@ def get_github_data(self):
 
         repo_collection.append(github_data_points)
 
-        publish_repo(github_data_points)
-
         counter += 1
         print(github_data_points)
+        
         if counter == 5:
+            publish_repo(github_data_points)
             break
 
 
-    filekey = "github_repos/test.json"
-    # s3_url = save_to_s3(repo_collection, filekey)
+    # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
     logger.info(f"Processed {len(repo_collection)} repositories")
 
 logger.info("Worker module loaded")
