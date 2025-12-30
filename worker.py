@@ -1,4 +1,5 @@
 import os
+import pika
 import random 
 import json
 import boto3
@@ -7,7 +8,7 @@ from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github
 from dotenv import load_dotenv
-from rb_queue.rabbitmq import publish_repo
+from rb_queue.rabbitmq import publish_repo, get_connection
 load_dotenv()
 
 
@@ -43,15 +44,18 @@ api_token = os.getenv("GITHUB_API_TOKEN")
 auth = Auth.Token(api_token)
 gh = Github(auth=auth)
 
+
 # bind = True allows to get task data, like task id
 @app.task(bind=True)
 def get_github_data(self):
     counter = 0
     repo_collection = []
 
+    connection = get_connection()
+    channel = connection.channel()
+
     repositories = gh.get_repos(since=0)
     rate_limit = gh.rate_limiting
-    logger.info(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
     for repo in repositories:
@@ -99,11 +103,12 @@ def get_github_data(self):
 
         repo_collection.append(github_data_points)
 
+        publish_repo(repo_data=github_data_points, channel_=channel)
+
         counter += 1
         print(github_data_points)
-        
         if counter == 5:
-            publish_repo(github_data_points)
+            connection.close()
             break
 
 
