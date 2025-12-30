@@ -16,17 +16,19 @@ def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
 
 
 print("Waiting for Celery task to complete")
-if result.ready():
-    try:
-        print('Getting the result')
-        result.get()
-    except Exception as e:
-        print(e)
-    else:
-        print('Done. The result state of the queue', result.state)
 
-        consume_repos(callback=rabbitmq_process_data)
-else:
-    print("Results are not ready")
-    print(result.state)
-    time.sleep(1)
+while True:
+    if result.ready():
+        try:
+            print('Getting the result')
+            result.get()
+        except Exception as e:
+            print(e)
+        else:
+            print('Done. The result state of the queue', result.state)
+
+            consume_repos(callback=rabbitmq_process_data)
+    else:
+        print("Results are not ready")
+        print(result.state)
+        time.sleep(1)

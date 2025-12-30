@@ -8,7 +8,8 @@ from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github
 from dotenv import load_dotenv
-from rb_queue.rabbitmq import publish_repo, get_connection
+from pydantic_models.github import RabbitMQ_Data_Validation
+from rb_queue.rabbitmq import publish_repo, get_connection, QUEUE_NAME
 load_dotenv()
 
 
@@ -51,65 +52,84 @@ def get_github_data(self):
     counter = 0
     repo_collection = []
 
-    connection = get_connection()
-    channel = connection.channel()
-
     repositories = gh.get_repos(since=0)
     rate_limit = gh.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
-    for repo in repositories:
-        github_data_points = {
-            # ===== MESSAGE METADATA =====
-            # message_id and timestamp are handled by the Pydantic model defaults
-            "message_id": self.request.id,
+    try:
+        connection = get_connection()
+        channel = connection.channel()  
 
-            # ===== BASIC INFO =====
-            "got_data_in": todays_date if todays_date else None,
-            "repo_id": repo.id if repo.id else None,
-            "name": repo.name if repo.name else None,
-            "full_name": repo.full_name if repo.full_name else None,
-            "description": repo.description if repo.description else None,
-            "github_url": repo.html_url if repo.html_url else None,
-            "homepage": repo.homepage if repo.homepage else None,
-            "default_branch": repo.default_branch if repo.default_branch else None,
+        for repo in repositories:
+            github_data_points = {
+                # ===== MESSAGE METADATA =====
+                # message_id and timestamp are handled by the Pydantic model defaults
+                "message_id": self.request.id,
 
-            # ===== POPULARITY METRICS =====
-            "stargazers_count": repo.stargazers_count if repo.stargazers_count else 0,
-            "forks_count": repo.forks_count if repo.forks_count else 0,
-            "watchers_count": repo.watchers_count if repo.watchers_count else 0,
-            "open_issues_count": repo.open_issues_count if repo.open_issues_count else 0,
+                # ===== BASIC INFO =====
+                "got_data_in": todays_date if todays_date else None,
+                "repo_id": repo.id if repo.id else None,
+                "name": repo.name if repo.name else None,
+                "full_name": repo.full_name if repo.full_name else None,
+                "description": repo.description if repo.description else None,
+                "github_url": repo.html_url if repo.html_url else None,
+                "homepage": repo.homepage if repo.homepage else None,
+                "default_branch": repo.default_branch if repo.default_branch else None,
 
-            # ===== DATES =====
-            "created_at": repo.created_at if repo.created_at else None,
-            "updated_at": repo.updated_at if repo.updated_at else None,
-            "pushed_at": repo.pushed_at if repo.pushed_at else None,
+                # ===== POPULARITY METRICS =====
+                "stargazers_count": repo.stargazers_count if repo.stargazers_count else 0,
+                "forks_count": repo.forks_count if repo.forks_count else 0,
+                "watchers_count": repo.watchers_count if repo.watchers_count else 0,
+                "open_issues_count": repo.open_issues_count if repo.open_issues_count else 0,
 
-            # ===== REPOSITORY SETTINGS =====
-            "language": repo.language if repo.language else None,
-            "topics": repo.topics if repo.topics else [],
-            "visibility": repo.visibility if repo.visibility else "public",
-            "size_kb": repo.size if repo.size else 0,
+                # ===== DATES =====
+                "created_at": repo.created_at if repo.created_at else None,
+                "updated_at": repo.updated_at if repo.updated_at else None,
+                "pushed_at": repo.pushed_at if repo.pushed_at else None,
 
-            # ===== BOOLEAN FLAGS =====
-            "is_fork": repo.fork if repo.fork else False,
-            "is_archived": repo.archived if repo.archived else False,
-            "is_private": repo.private if repo.private else False,
+                # ===== REPOSITORY SETTINGS =====
+                "language": repo.language if repo.language else None,
+                "topics": repo.topics if repo.topics else [],
+                "visibility": repo.visibility if repo.visibility else "public",
+                "size_kb": repo.size if repo.size else 0,
 
-            # ===== OWNER INFO =====
-            "owner_login": repo.owner.login if repo.owner else None,
-            "owner_type": repo.owner.type if repo.owner else None,
-        }
+                # ===== BOOLEAN FLAGS =====
+                "is_fork": repo.fork if repo.fork else False,
+                "is_archived": repo.archived if repo.archived else False,
+                "is_private": repo.private if repo.private else False,
 
-        repo_collection.append(github_data_points)
+                # ===== OWNER INFO =====
+                "owner_login": repo.owner.login if repo.owner else None,
+                "owner_type": repo.owner.type if repo.owner else None,
+            }
 
-        publish_repo(repo_data=github_data_points, channel_=channel)
+            repo_collection.append(github_data_points)
 
-        counter += 1
-        print(github_data_points)
-        if counter == 5:
-            connection.close()
-            break
+
+
+            repo_v = RabbitMQ_Data_Validation(**github_data_points)
+
+            channel.queue_declare(queue=QUEUE_NAME, durable=True)
+
+            channel.basic_publish(
+                exchange='',
+                routing_key=QUEUE_NAME,
+                body=repo_v.model_dump_json(),
+                properties=pika.BasicProperties(delivery_mode=2)
+            )
+
+
+
+            counter += 1
+            print(github_data_points)
+            if counter == 5:
+                break
+
+    except Exception as e:
+        print(e)
+
+    finally:
+        connection.close()
 
 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
