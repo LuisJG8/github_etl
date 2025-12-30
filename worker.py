@@ -124,6 +124,7 @@ def get_github_data(self):
             print(github_data_points)
             if counter == 5:
                 break
+            
 
     except Exception as e:
         print(e)
