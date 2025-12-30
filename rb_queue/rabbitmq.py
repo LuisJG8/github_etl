@@ -13,6 +13,7 @@ QUEUE_NAME = "github_repos"
 
 def get_connection():
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+    
     return pika.BlockingConnection(
         pika.ConnectionParameters(
             host=RABBITMQ_HOST, 
@@ -20,6 +21,21 @@ def get_connection():
             credentials=credentials
         )
     )
+
+
+def publish_repo(repo_data: dict):
+    repo = RabbitMQ_Data_Validation(**repo_data)
+    connection = get_connection()
+    channel = connection.channel()
+    
+    channel.queue_declare(queue=QUEUE_NAME, durable=True)
+    channel.basic_publish(
+        exchange='',
+        routing_key=QUEUE_NAME,
+        body=repo.model_dump_json(),
+        properties=pika.BasicProperties(delivery_mode=2)
+    )
+    connection.close()
 
 
 def consume_repos(callback):
@@ -43,17 +59,3 @@ def consume_repos(callback):
         channel.stop_consuming()
     finally:
         connection.close()
-
-
-def publish_repo(repo_data: dict):
-    repo = RabbitMQ_Data_Validation(**repo_data)
-    connection = get_connection()
-    channel = connection.channel()
-    channel.queue_declare(queue=QUEUE_NAME, durable=True)
-    channel.basic_publish(
-        exchange='',
-        routing_key=QUEUE_NAME,
-        body=repo.model_dump_json(),
-        properties=pika.BasicProperties(delivery_mode=2)
-    )
-    connection.close()

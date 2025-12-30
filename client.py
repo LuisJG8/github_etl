@@ -12,23 +12,26 @@ result = AsyncResult(celery_task_get_repos.id, app=app)
 
 # Getting the data from RabbitMQ, note: convert to lambda
 def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
-    return print("This is the data from the RMQ: ", repo_data)
-
-consume_repos(callback=rabbitmq_process_data)
-
-print('Done')
-print('The result state of the queue', result.state) 
+    print("This is the data from the RMQ: ", repo_data)
 
 
-# while True:
-#     if result.ready():
-#         print('Getting the result', result.get())
-#         repo_list = result.get()
-#         break
-#     else:
-#         print("Results are not ready")
-#         print(result.state)
-#         time.sleep(1)
+while True:
+    if result.ready():
+        print('Getting the result', result.get())
+
+        print('Done')
+        print('The result state of the queue', result.state)
+
+        consume_repos(callback=rabbitmq_process_data)
+        
+        print('The result state of the queue after', result.state)
+        repo_list = result.get()
+        break
+    else:
+        print("Results are not ready")
+        print(result.state)
+        time.sleep(1)
+
 
 # if isinstance(repo_list, list):
 #     for repo_data in repo_list:

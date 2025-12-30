@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PYTHONNUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1
