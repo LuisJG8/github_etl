@@ -2,7 +2,6 @@ import os
 import time
 import json
 import logging
-import signal
 from datetime import datetime
 from celery.result import AsyncResult
 from worker import get_github_data, app 
@@ -24,7 +23,6 @@ def consume_all_messages():
     """Consume all messages currently in the RabbitMQ queue"""
     connection = get_connection()
     channel = connection.channel()
-    channel.queue_declare(queue=QUEUE_NAME, durable=True)
     
     # Get the number of messages in the queue
     method_frame = channel.queue_declare(queue=QUEUE_NAME, durable=True, passive=True)
@@ -67,8 +65,15 @@ def save_data_to_file():
     
     # Save collected data to JSON file in the mounted volume
     data_file_path = "data/gh_data.json"
+    
+    # Custom serializer for non-JSON-serializable objects
+    def json_serializer(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+    
     with open(data_file_path, mode="w") as f:
-        json.dump(collected_repos, f, default=str, indent=2)
+        json.dump(collected_repos, f, default=json_serializer, indent=2)
     
     print(f"Saved {len(collected_repos)} repositories to {data_file_path}")
 
