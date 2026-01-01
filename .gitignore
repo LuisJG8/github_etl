@@ -3,3 +3,5 @@
 .gitignore
 data/
 *.json
+__pycache__/
+*.pyc
