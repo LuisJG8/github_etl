@@ -23,18 +23,13 @@ def get_connection():
     )
 
 
-def publish_repo(repo_data: dict, channel_):
-    pass
-    
-
-
-
-
 def consume_repos(callback):
     connection = get_connection()
     channel = connection.channel()
     channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
+    # properties is needed becayse channel.basic_consume expects 4 parameters, properties does not have
+    # any value but it is required to meet the 4 parameters requirement
     def on_message(ch, method, properties, body):
         try:
             repo = RabbitMQ_Data_Validation.model_validate_json(body)

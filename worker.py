@@ -9,7 +9,7 @@ from datetime import datetime
 from github import Auth, Github
 from dotenv import load_dotenv
 from pydantic_models.github import RabbitMQ_Data_Validation
-from rb_queue.rabbitmq import publish_repo, get_connection, QUEUE_NAME
+from rb_queue.rabbitmq import get_connection, QUEUE_NAME
 load_dotenv()
 
 
@@ -125,7 +125,8 @@ def get_github_data(self):
 
             counter += 1
             print(github_data_points)
-            if counter == 5:
+
+            if rate_limit[0] == 10:
                 break
 
 
