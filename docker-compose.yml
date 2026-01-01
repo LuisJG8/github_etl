@@ -71,6 +71,8 @@ services:
     build: .
     command: python client.py 
     env_file: ./config/.env
+    volumes:
+      - ./data:/app/data
     depends_on:
       rabbitmq:
         condition: service_healthy
