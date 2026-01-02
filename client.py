@@ -30,6 +30,14 @@ while True:
             print('Done. The result state of the queue', result.state)
 
             consume_repos(callback = lambda repo_data: print("This is the data from the RMQ: ", repo_data))
+
+            with open("gh_data.json", mode="a") as f:
+                json.dump(rabbitmq_process_data, f, default=str, indent=2)
+
+            os.makedirs("data", exist_ok=True)
+            
+            with open("data/gh_data.json", mode="w") as fi:
+                json.dump(rabbitmq_process_data, fi, default=str, indent=2)
             break
     else:
         print("Results are not ready")
