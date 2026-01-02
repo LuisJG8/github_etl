@@ -1,6 +1,7 @@
 import os
 import pika
 import random 
+from pathlib import Path
 import json
 import boto3
 from celery import Celery
@@ -122,18 +123,23 @@ def get_github_data(self):
             )
 
 
-
             counter += 1
             print(github_data_points)
+            # rate_limit[0]
 
-            if rate_limit[0] == 10:
+            if counter == 10:
                 break
-
 
     except Exception as e:
         print(e)
 
     finally:
+        Path("data").mkdir(parents=True, exist_ok=True)
+        Path("data/github_repos.json").write_text(
+            json.dumps(repo_collection, default=str, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
         if connection:
             connection.close()
         else:
