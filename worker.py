@@ -1,13 +1,12 @@
 import os
 import pika
-import random 
 from pathlib import Path
 import json
 import boto3
 from celery import Celery
 from celery.utils.log import get_task_logger
 from datetime import datetime
-from github import Auth, Github
+from github import Auth, Github # pylint: disable=no-name-in-module
 from dotenv import load_dotenv
 from pydantic_models.github import RabbitMQ_Data_Validation
 from rb_queue.rabbitmq import get_connection, QUEUE_NAME
@@ -125,20 +124,29 @@ def get_github_data(self):
 
             counter += 1
             print(github_data_points)
-            # rate_limit[0]
 
-            if counter == 10:
+            remaining_api_calls = gh.rate_limiting
+            remaining = remaining_api_calls[0]
+            if remaining >= 4700 and remaining <= 5000:
                 break
+            if remaining == 0:
+                # TODO
+                # Put worker.py on wait for 60 minutes
+                # run the worker.py script with different env variables so that I can use the other
+                # github account and it's credentials to have 1000 more API calls
+                pass    
+
+            print("Remaining api calls")
 
     except Exception as e:
         print(e)
 
     finally:
-        Path("data").mkdir(parents=True, exist_ok=True)
-        Path("data/github_repos.json").write_text(
-            json.dumps(repo_collection, default=str, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        # Path("data").mkdir(parents=True, exist_ok=True)
+        # Path("data/github_repos.json").write_text(
+        #     json.dumps(repo_collection, default=str, ensure_ascii=False, indent=2),
+        #     encoding="utf-8",
+        # )
 
         if connection:
             connection.close()
@@ -148,5 +156,7 @@ def get_github_data(self):
 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
     logger.info(f"Processed {len(repo_collection)} repositories")
+
+    return repo_collection
 
 logger.info("Worker module loaded")

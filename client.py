@@ -1,6 +1,4 @@
-import os
 import time
-import json
 import logging
 from datetime import datetime
 from celery.result import AsyncResult
@@ -8,13 +6,9 @@ from worker import get_github_data, app
 from rb_queue.rabbitmq import consume_repos
 from pydantic_models.github import RabbitMQ_Data_Validation
 
-
+all_data_collected = []
 celery_task_get_repos = get_github_data.delay()
 result = AsyncResult(celery_task_get_repos.id, app=app)
-
-# Getting the data from RabbitMQ, note: convert to lambda
-def rabbitmq_process_data(repo_data: RabbitMQ_Data_Validation):
-    print("This is the data from the RMQ: ", repo_data)
 
 print("Waiting for Celery task to complete")
 
@@ -29,7 +23,8 @@ while True:
         else:
             print('Done. The result state of the queue', result.state)
 
-            consume_repos(callback = lambda repo_data: print("This is the data from the RMQ: ", repo_data))
+            repo_data_ = consume_repos(callback = lambda repo_data: print("This is the data from the RMQ: ", repo_data))
+            all_data_collected.append(repo_data_)
             break
     else:
         print("Results are not ready")

@@ -81,6 +81,17 @@ services:
         condition: service_healthy
       celery_worker:
         condition: service_healthy
+      
+      
+  # json_to_parquet:
+  #   build: .
+  #   command: python etl/json_to_parquet.py
+  #   volumes:
+  #     - ./data:/app/data
+  #   env_file: ./config/.env
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
 
 volumes:
   rabbitmq_data:
