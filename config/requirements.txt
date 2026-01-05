@@ -4,3 +4,8 @@ python-dotenv
 pydantic
 boto3
 pika
+flower
+pyarrow
+duckdb
+pandas
+polars
