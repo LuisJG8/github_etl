@@ -127,7 +127,7 @@ def get_github_data(self):
 
             remaining_api_calls = gh.rate_limiting
             remaining = remaining_api_calls[0]
-            if remaining >= 4700 and remaining <= 5000:
+            if counter == 5:
                 break
             if remaining == 0:
                 # TODO
