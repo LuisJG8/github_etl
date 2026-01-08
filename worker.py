@@ -127,9 +127,9 @@ def get_github_data(self):
 
             remaining_api_calls = gh.rate_limiting
             remaining = remaining_api_calls[0]
-            if counter == 5:
-                break
-            if remaining == 0:
+
+            if int(remaining) == 4020:
+                print("found it")
                 # TODO
                 # Put worker.py on wait for 60 minutes
                 # run the worker.py script with different env variables so that I can use the other
@@ -137,6 +137,7 @@ def get_github_data(self):
                 pass    
 
             print("Remaining api calls")
+            print(remaining)
 
     except Exception as e:
         print(e)

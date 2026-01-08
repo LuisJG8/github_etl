@@ -7,8 +7,7 @@ from worker import get_github_data, app
 from rb_queue.rabbitmq import consume_repos
 from pydantic_models.github import RabbitMQ_Data_Validation
 import polars as pl
-from worker import get_github_data
-import json
+from worker import get_github_data, gh
 
 
 # celery_task_get_repos = get_github_data.delay()
@@ -27,9 +26,9 @@ print("Waiting for Celery task to complete")
 while True:
     try:
         print('Getting the result')
-        res = get_github_data.apply_async()
-        hey = res.get()
-        print("The type is here", type(hey))
+        response = get_github_data.apply_async()
+        get_data = response.get()
+        print("The type is here", type(get_data))
 
     except Exception as e:
         print(e)
@@ -37,11 +36,13 @@ while True:
     
     else:
         print("this is the else")
-        print(hey)
-        # repo_data_ = consume_repos(callback = lambda repo_data: print("This is the data from the RMQ: ", repo_data))
-        # all_data_collected.append(repo_data_)
+        print(get_data)
 
-        m_dir = Path("data").mkdir(parents=True, exist_ok=True)
-        maa = pl.DataFrame()
-        maa.write_parquet("data/testing.parquet", compression="zstd")
-        break
+        df = pl.DataFrame(get_data)
+        df.write_parquet("data/testing.parquet", compression="zstd")
+        
+        remaining_api_calls = gh.rate_limiting
+        remaining = remaining_api_calls[0]
+
+        if int(remaining) == 3970:
+            break
