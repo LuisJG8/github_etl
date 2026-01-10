@@ -41,9 +41,9 @@ app = Celery(
 )
 
 
-api_token = os.getenv("GITHUB_API_TOKEN")
-auth = Auth.Token(api_token)
-gh = Github(auth=auth)
+api_token, api_token_two = os.getenv("GITHUB_API_TOKEN"), os.getenv("GITHUB_API_TOKEN_SECOND_ACCOUNT")
+auth, auth_two = Auth.Token(api_token), Auth.Token(api_token_two)
+gh, gh_two = Github(auth=auth), Github(auth=auth_two)
 
 
 # bind = True allows to get task data, like task id
