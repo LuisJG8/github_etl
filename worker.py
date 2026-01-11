@@ -48,12 +48,12 @@ gh, gh_two = Github(auth=auth), Github(auth=auth_two)
 
 # bind = True allows to get task data, like task id
 @app.task(bind=True)
-def get_github_data(self):
+def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = gh):
     counter = 0
     repo_collection = []
 
-    repositories = gh.get_repos(since=0)
-    rate_limit = gh.rate_limiting
+    repositories = github_instance.get_repos(since=start_in_repo_num)
+    rate_limit = github_instance.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
     connection = None
@@ -62,16 +62,11 @@ def get_github_data(self):
     try:
         connection = get_connection()
         channel = connection.channel()  
-        
         channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
         for repo in repositories:
             github_data_points = {
-                # ===== MESSAGE METADATA =====
-                # message_id and timestamp are handled by the Pydantic model defaults
                 "message_id": self.request.id,
-
-                # ===== BASIC INFO =====
                 "got_data_in": todays_date if todays_date else None,
                 "repo_id": repo.id if repo.id else None,
                 "name": repo.name if repo.name else None,
@@ -80,36 +75,25 @@ def get_github_data(self):
                 "github_url": repo.html_url if repo.html_url else None,
                 "homepage": repo.homepage if repo.homepage else None,
                 "default_branch": repo.default_branch if repo.default_branch else None,
-
-                # ===== POPULARITY METRICS =====
                 "stargazers_count": repo.stargazers_count if repo.stargazers_count else 0,
                 "forks_count": repo.forks_count if repo.forks_count else 0,
                 "watchers_count": repo.watchers_count if repo.watchers_count else 0,
                 "open_issues_count": repo.open_issues_count if repo.open_issues_count else 0,
-
-                # ===== DATES =====
                 "created_at": repo.created_at if repo.created_at else None,
                 "updated_at": repo.updated_at if repo.updated_at else None,
                 "pushed_at": repo.pushed_at if repo.pushed_at else None,
-
-                # ===== REPOSITORY SETTINGS =====
                 "language": repo.language if repo.language else None,
                 "topics": repo.topics if repo.topics else [],
                 "visibility": repo.visibility if repo.visibility else "public",
                 "size_kb": repo.size if repo.size else 0,
-
-                # ===== BOOLEAN FLAGS =====
                 "is_fork": repo.fork if repo.fork else False,
                 "is_archived": repo.archived if repo.archived else False,
                 "is_private": repo.private if repo.private else False,
-
-                # ===== OWNER INFO =====
                 "owner_login": repo.owner.login if repo.owner else None,
                 "owner_type": repo.owner.type if repo.owner else None,
             }
 
             repo_collection.append(github_data_points)
-
 
 
             repo_v = RabbitMQ_Data_Validation(**github_data_points)
@@ -125,30 +109,26 @@ def get_github_data(self):
             counter += 1
             print(github_data_points)
 
-            remaining_api_calls = gh.rate_limiting
+            remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(remaining) == 4020:
-                print("found it")
+            if int(remaining) <= 0:
+                print("reached the rate limit of 5000 API calls")
+                print("waiting for 60 minutes")
+                raise self.retry(countdown=3600)
+            
                 # TODO
                 # Put worker.py on wait for 60 minutes
                 # run the worker.py script with different env variables so that I can use the other
                 # github account and it's credentials to have 1000 more API calls
-                pass    
-
-            print("Remaining api calls")
-            print(remaining)
+            else:
+                print("Remaining api calls")
+                print(remaining)
 
     except Exception as e:
         print(e)
 
     finally:
-        # Path("data").mkdir(parents=True, exist_ok=True)
-        # Path("data/github_repos.json").write_text(
-        #     json.dumps(repo_collection, default=str, ensure_ascii=False, indent=2),
-        #     encoding="utf-8",
-        # )
-
         if connection:
             connection.close()
         else:

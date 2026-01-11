@@ -15,34 +15,23 @@ from worker import get_github_data, gh
 
 print("Waiting for Celery task to complete")
 
-# page = 0
-# while True:
-#     res = get_github_data.apply_async(kwargs={"page": page})   # kick off one batch/task
-#     data_or_path = res.get(timeout=600)   # wait until done
-#     if not data_or_path:                  # worker can return None to signal “no more”
-#         break
-#     page += 1
+try:
+    print('Getting the result')
+    response = get_github_data.apply_async()
+    get_data = response.get()
+    print("The type is here", type(get_data))
 
-while True:
-    try:
-        print('Getting the result')
-        response = get_github_data.apply_async()
-        get_data = response.get()
-        print("The type is here", type(get_data))
+except Exception as e:
+    print(e)
 
-    except Exception as e:
-        print(e)
-        break
-    
-    else:
-        print("this is the else")
-        print(get_data)
+else:
+    if Path("data").exists():
+        pass
+    if not Path("data").exists():
+        Path("data").mkdir(parents=True, exist_ok=True)
 
-        df = pl.DataFrame(get_data)
-        df.write_parquet("data/testing.parquet", compression="zstd")
-        
-        remaining_api_calls = gh.rate_limiting
-        remaining = remaining_api_calls[0]
+    print("this is the else")
+    print(get_data)
 
-        if int(remaining) == 3970:
-            break
+    df = pl.DataFrame(get_data)
+    df.write_parquet("data/testing.parquet", compression="zstd")
