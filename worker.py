@@ -51,13 +51,12 @@ gh, gh_two = Github(auth=auth), Github(auth=auth_two)
 def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = gh):
     counter = 0
     repo_collection = []
+    connection = None
+    channel = None
 
     repositories = github_instance.get_repos(since=start_in_repo_num)
     rate_limit = github_instance.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
-
-    connection = None
-    channel = None
 
     try:
         connection = get_connection()
@@ -105,22 +104,31 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
                 properties=pika.BasicProperties(delivery_mode=2)
             )
 
-
             counter += 1
             print(github_data_points)
 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(remaining) <= 0:
+            # if int(remaining) <= 0:
+            if counter == 5:
                 print("reached the rate limit of 5000 API calls")
                 print("waiting for 60 minutes")
-                raise self.retry(countdown=3600)
+
+                start_in_repo_num = counter
+                github_instance = gh_two
+
+                # raise self.retry(countdown=3600)
             
                 # TODO
-                # Put worker.py on wait for 60 minutes
                 # run the worker.py script with different env variables so that I can use the other
                 # github account and it's credentials to have 1000 more API calls
+            elif counter == 10:
+                print('new ones')
+                print(start_in_repo_num)
+                print(github_instance)
+                break
+
             else:
                 print("Remaining api calls")
                 print(remaining)

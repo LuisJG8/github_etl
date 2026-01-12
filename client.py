@@ -13,25 +13,25 @@ from worker import get_github_data, gh
 # celery_task_get_repos = get_github_data.delay()
 # result = AsyncResult(celery_task_get_repos.id, app=app)
 
+today = datetime.utcnow().strftime("%Y-%m-%d")
+
 print("Waiting for Celery task to complete")
 
 try:
     print('Getting the result')
     response = get_github_data.apply_async()
-    get_data = response.get()
-    print("The type is here", type(get_data))
+    get_data = response.get(timeout=450)
+    print(f"Received {len(get_data)} records")
 
 except Exception as e:
-    print(e)
+    print(f"Error: {e}")
 
 else:
-    if Path("data").exists():
-        pass
-    if not Path("data").exists():
-        Path("data").mkdir(parents=True, exist_ok=True)
+    if not Path(f"data/{today}/").exists():
+        Path(f"data/{today}").mkdir(parents=True, exist_ok=True)
 
     print("this is the else")
     print(get_data)
 
     df = pl.DataFrame(get_data)
-    df.write_parquet("data/testing.parquet", compression="zstd")
+    df.write_parquet(f"data/{today}/hey.parquet", compression="zstd")
