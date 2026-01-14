@@ -3,6 +3,7 @@ import pika
 from pathlib import Path
 import json
 import boto3
+import time
 from celery import Celery
 from celery.utils.log import get_task_logger
 from datetime import datetime
@@ -43,7 +44,7 @@ app = Celery(
 
 api_token, api_token_two = os.getenv("GITHUB_API_TOKEN"), os.getenv("GITHUB_API_TOKEN_SECOND_ACCOUNT")
 auth, auth_two = Auth.Token(api_token), Auth.Token(api_token_two)
-gh, gh_two = Github(auth=auth), Github(auth=auth_two)
+gh, gh_two = Github(auth=auth, per_page=100), Github(auth=auth_two)
 
 
 # bind = True allows to get task data, like task id
@@ -54,7 +55,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     connection = None
     channel = None
 
-    repositories = github_instance.get_repos(since=start_in_repo_num)
+    repositories = github_instance.get_repos(since=0)
     rate_limit = github_instance.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
@@ -110,28 +111,33 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            # if int(remaining) <= 0:
-            if counter == 5:
+            print("THIS IS THE REMAINING")
+
+            if counter == 100:
                 print("reached the rate limit of 5000 API calls")
                 print("waiting for 60 minutes")
 
-                start_in_repo_num = counter
-                github_instance = gh_two
+                time.sleep(5)
 
-                # raise self.retry(countdown=3600)
+            #     # start_in_repo_num = counter
+            #     # github_instance = gh_two
+
+            #     # raise self.retry(countdown=3600)
+            #     break
             
-                # TODO
-                # run the worker.py script with different env variables so that I can use the other
-                # github account and it's credentials to have 1000 more API calls
-            elif counter == 10:
-                print('new ones')
-                print(start_in_repo_num)
-                print(github_instance)
-                break
+            #     # TODO
+            #     # run the worker.py script with different env variables so that I can use the other
+            #     # github account and it's credentials to have 1000 more API calls
 
-            else:
-                print("Remaining api calls")
-                print(remaining)
+            # # elif counter == 10:
+            # #     print('new ones')
+            # #     print(start_in_repo_num)
+            # #     print(github_instance)
+            # #     break
+
+            # else:
+            #     print("Remaining api calls")
+            #     print(remaining)
 
     except Exception as e:
         print(e)
