@@ -20,7 +20,7 @@ print("Waiting for Celery task to complete")
 try:
     print('Getting the result')
     response = get_github_data.apply_async()
-    get_data = response.get(timeout=450)
+    get_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Received {len(get_data)} records")
 
 except Exception as e:
@@ -34,4 +34,4 @@ else:
     print(get_data)
 
     df = pl.DataFrame(get_data)
-    df.write_parquet(f"data/{today}/hey.parquet", compression="zstd")
+    df.write_parquet(f"data/{today}/github_data.parquet", compression="zstd")

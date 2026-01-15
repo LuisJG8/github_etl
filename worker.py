@@ -115,9 +115,6 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
 
             if counter == 100:
                 print("reached the rate limit of 5000 API calls")
-                print("waiting for 60 minutes")
-
-                time.sleep(5)
 
             #     # start_in_repo_num = counter
             #     # github_instance = gh_two
@@ -129,15 +126,15 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             #     # run the worker.py script with different env variables so that I can use the other
             #     # github account and it's credentials to have 1000 more API calls
 
-            # # elif counter == 10:
-            # #     print('new ones')
-            # #     print(start_in_repo_num)
-            # #     print(github_instance)
-            # #     break
+            # elif counter == 10:
+            #     print('new ones')
+            #     print(start_in_repo_num)
+            #     print(github_instance)
+            #     break
 
-            # else:
-            #     print("Remaining api calls")
-            #     print(remaining)
+            else:
+                print("Remaining api calls")
+                print(remaining)
 
     except Exception as e:
         print(e)
