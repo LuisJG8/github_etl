@@ -21,7 +21,7 @@ try:
     print('Getting the result')
     response = get_github_data.apply_async()
     get_data = response.get(timeout=3600)  # 1 hour timeout
-    print(f"Received {len(get_data)} records")
+    print(f"Result: {get_data}")
 
 except Exception as e:
     print(f"Error: {e}")

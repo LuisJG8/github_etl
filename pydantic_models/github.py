@@ -24,9 +24,9 @@ class RabbitMQ_Data_Validation(BaseModel):
     open_issues_count: int = Field(default=0, ge=0)
 
     # ===== DATES =====
-    created_at: datetime
-    updated_at: datetime  
-    pushed_at: datetime
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    pushed_at: Optional[datetime] = None
     
     # ===== REPOSITORY SETTINGS =====
     language: Optional[str] = None

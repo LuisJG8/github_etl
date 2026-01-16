@@ -7,7 +7,7 @@ import time
 from celery import Celery
 from celery.utils.log import get_task_logger
 from datetime import datetime
-from github import Auth, Github # pylint: disable=no-name-in-module
+from github import Auth, Github, GithubException # pylint: disable=no-name-in-module
 from dotenv import load_dotenv
 from pydantic_models.github import RabbitMQ_Data_Validation
 from rb_queue.rabbitmq import get_connection, QUEUE_NAME
@@ -51,11 +51,10 @@ gh, gh_two = Github(auth=auth, per_page=100), Github(auth=auth_two)
 @app.task(bind=True)
 def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = gh):
     counter = 0
-    repo_collection = []
     connection = None
     channel = None
 
-    repositories = github_instance.get_repos(since=0)
+    repositories = github_instance.get_repos(since=2175)
     rate_limit = github_instance.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
@@ -65,53 +64,68 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
         channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
         for repo in repositories:
-            github_data_points = {
-                "message_id": self.request.id,
-                "got_data_in": todays_date if todays_date else None,
-                "repo_id": repo.id if repo.id else None,
-                "name": repo.name if repo.name else None,
-                "full_name": repo.full_name if repo.full_name else None,
-                "description": repo.description if repo.description else None,
-                "github_url": repo.html_url if repo.html_url else None,
-                "homepage": repo.homepage if repo.homepage else None,
-                "default_branch": repo.default_branch if repo.default_branch else None,
-                "stargazers_count": repo.stargazers_count if repo.stargazers_count else 0,
-                "forks_count": repo.forks_count if repo.forks_count else 0,
-                "watchers_count": repo.watchers_count if repo.watchers_count else 0,
-                "open_issues_count": repo.open_issues_count if repo.open_issues_count else 0,
-                "created_at": repo.created_at if repo.created_at else None,
-                "updated_at": repo.updated_at if repo.updated_at else None,
-                "pushed_at": repo.pushed_at if repo.pushed_at else None,
-                "language": repo.language if repo.language else None,
-                "topics": repo.topics if repo.topics else [],
-                "visibility": repo.visibility if repo.visibility else "public",
-                "size_kb": repo.size if repo.size else 0,
-                "is_fork": repo.fork if repo.fork else False,
-                "is_archived": repo.archived if repo.archived else False,
-                "is_private": repo.private if repo.private else False,
-                "owner_login": repo.owner.login if repo.owner else None,
-                "owner_type": repo.owner.type if repo.owner else None,
-            }
+            print("This is the repo printing", repo)
+            
+            try:
+                # Try to access repo properties - this is where 403 errors occur
+                github_data_points = {
+                    "message_id": self.request.id,
+                    "got_data_in": todays_date if todays_date else None,
+                    "repo_id": repo.id if repo.id else None,
+                    "name": repo.name if repo.name else None,
+                    "full_name": repo.full_name if repo.full_name else None,
+                    "description": repo.description if repo.description else None,
+                    "github_url": repo.html_url if repo.html_url else None,
+                    "homepage": repo.homepage if repo.homepage else None,
+                    "default_branch": repo.default_branch if repo.default_branch else None,
+                    "stargazers_count": repo.stargazers_count if repo.stargazers_count else 0,
+                    "forks_count": repo.forks_count if repo.forks_count else 0,
+                    "watchers_count": repo.watchers_count if repo.watchers_count else 0,
+                    "open_issues_count": repo.open_issues_count if repo.open_issues_count else 0,
+                    "created_at": repo.created_at if repo.created_at else None,
+                    "updated_at": repo.updated_at if repo.updated_at else None,
+                    "pushed_at": repo.pushed_at if repo.pushed_at else None,
+                    "language": repo.language if repo.language else None,
+                    "topics": repo.topics if repo.topics else [],
+                    "visibility": repo.visibility if repo.visibility else "public",
+                    "size_kb": repo.size if repo.size else 0,
+                    "is_fork": repo.fork if repo.fork else False,
+                    "is_archived": repo.archived if repo.archived else False,
+                    "is_private": repo.private if repo.private else False,
+                    "owner_login": repo.owner.login if repo.owner else None,
+                    "owner_type": repo.owner.type if repo.owner else None,
+                }
+            
+            except GithubException as ge:
+                if ge.status == 403:
+                    print(f"Skipping blocked repo (403): {repo.full_name if hasattr(repo, 'full_name') else 'unknown'}")
+                else:
+                    print(f"GitHub API error {ge.status} for repo, skipping...")
+                continue
+            except Exception as e:
+                print(f"Error accessing repo data: {e}, skipping...")
+                continue
 
-            repo_collection.append(github_data_points)
+            try:
+                repo_v = RabbitMQ_Data_Validation(**github_data_points)
 
+                channel.basic_publish(
+                    exchange='',
+                    routing_key=QUEUE_NAME,
+                    body=repo_v.model_dump_json(),
+                    properties=pika.BasicProperties(delivery_mode=2)
+                )
 
-            repo_v = RabbitMQ_Data_Validation(**github_data_points)
-
-            channel.basic_publish(
-                exchange='',
-                routing_key=QUEUE_NAME,
-                body=repo_v.model_dump_json(),
-                properties=pika.BasicProperties(delivery_mode=2)
-            )
-
-            counter += 1
-            print(github_data_points)
+                counter += 1
+                print(github_data_points)
+            
+            except Exception as validation_error:
+                print(f"Validation error for repo {github_data_points.get('full_name')}: {validation_error}")
+                print("Skipping this repo and continuing...")
+                continue
 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
-
-            print("THIS IS THE REMAINING")
 
             if counter == 100:
                 print("reached the rate limit of 5000 API calls")
@@ -136,8 +150,11 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
                 print("Remaining api calls")
                 print(remaining)
 
+                print("Count")
+                print(counter)
+
     except Exception as e:
-        print(e)
+        print("Error", e)
 
     finally:
         if connection:
@@ -147,8 +164,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
 
 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
-    logger.info(f"Processed {len(repo_collection)} repositories")
+    logger.info(f"Processed {counter} repositories")
 
-    return repo_collection
 
 logger.info("Worker module loaded")
