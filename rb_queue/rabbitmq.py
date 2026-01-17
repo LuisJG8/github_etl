@@ -1,6 +1,5 @@
 import os
 import pika
-import time 
 from pydantic import ValidationError
 from pydantic_models.github import RabbitMQ_Data_Validation
 

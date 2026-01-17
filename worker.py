@@ -127,8 +127,8 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if counter == 100:
-                print("reached the rate limit of 5000 API calls")
+            if remaining == 0:
+                print(f"Reached the rate limit of {rate_limit[1]} API calls")
 
             #     # start_in_repo_num = counter
             #     # github_instance = gh_two
@@ -139,12 +139,6 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             #     # TODO
             #     # run the worker.py script with different env variables so that I can use the other
             #     # github account and it's credentials to have 1000 more API calls
-
-            # elif counter == 10:
-            #     print('new ones')
-            #     print(start_in_repo_num)
-            #     print(github_instance)
-            #     break
 
             else:
                 print("Remaining api calls")

@@ -1,11 +1,9 @@
-import time
 import logging
 from pathlib import Path
 from datetime import datetime
 from celery.result import AsyncResult
 from worker import get_github_data, app 
 from rb_queue.rabbitmq import consume_repos
-from pydantic_models.github import RabbitMQ_Data_Validation
 import polars as pl
 from worker import get_github_data, gh
 
