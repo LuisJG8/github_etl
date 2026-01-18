@@ -23,6 +23,8 @@ try:
 
 except Exception as e:
     print(f"Error: {e}")
+    df = pl.DataFrame(get_data)
+    df.write_parquet(f"data/{today}/github_data.parquet", compression="zstd")
 
 else:
     if not Path(f"data/{today}/").exists():
