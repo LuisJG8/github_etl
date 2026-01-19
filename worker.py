@@ -7,7 +7,7 @@ import time
 from celery import Celery
 from celery.utils.log import get_task_logger
 from datetime import datetime
-from github import Auth, Github, GithubException # pylint: disable=no-name-in-module
+from github import Auth, Github, GithubException 
 from dotenv import load_dotenv
 from pydantic_models.github import RabbitMQ_Data_Validation
 from rb_queue.rabbitmq import get_connection, QUEUE_NAME
