@@ -37,4 +37,3 @@ else:
     df.write_parquet(f"data/{today}/github_data.parquet", compression="zstd")
     print("Valid Parquet data")
     
-pass
