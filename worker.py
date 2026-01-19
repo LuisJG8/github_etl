@@ -130,14 +130,6 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
                 print(f"Reached the rate limit of {rate_limit[1]} API calls")
 
                 break
-            if remaining == 0:
-                # TODO
-                # Put worker.py on wait for 60 minutes
-                # run the worker.py script with different env variables so that I can use the other
-                # github account and it's credentials to have 1000 more API calls
-                pass    
-
-            print("Remaining api calls")
 
             #     # start_in_repo_num = counter
             #     # github_instance = gh_two
@@ -170,7 +162,5 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     logger.info(f"Processed {counter} repositories")
 
     return github_data_points
-
-    return repo_collection
 
 logger.info("Worker module loaded")
