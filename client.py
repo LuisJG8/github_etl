@@ -2,10 +2,9 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from celery.result import AsyncResult
-from worker import get_github_data, app 
+from worker import get_github_data, app, gh
 from rb_queue.rabbitmq import consume_repos
 import polars as pl
-from worker import get_github_data, gh
 
 
 # celery_task_get_repos = get_github_data.delay()
@@ -21,6 +20,11 @@ try:
     get_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Result: {get_data}")
 
+    if response.ready() == True:
+        print(response.ready())
+    else:
+        print(response.raedy)
+
 except Exception as e:
     print(f"Error: {e}")
     df = pl.DataFrame(get_data)
@@ -30,7 +34,7 @@ else:
     if not Path(f"data/{today}/").exists():
         Path(f"data/{today}").mkdir(parents=True, exist_ok=True)
 
-    print("this is the else")
+    print("This is the else of the client")
     print(get_data)
 
     df = pl.DataFrame(get_data)

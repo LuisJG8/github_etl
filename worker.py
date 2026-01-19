@@ -44,7 +44,7 @@ app = Celery(
 
 api_token, api_token_two = os.getenv("GITHUB_API_TOKEN"), os.getenv("GITHUB_API_TOKEN_SECOND_ACCOUNT")
 auth, auth_two = Auth.Token(api_token), Auth.Token(api_token_two)
-gh, gh_two = Github(auth=auth, per_page=100), Github(auth=auth_two)
+gh, gh_two = Github(auth=auth), Github(auth=auth_two)
 
 
 # bind = True allows to get task data, like task id
@@ -54,7 +54,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     connection = None
     channel = None
 
-    repositories = github_instance.get_repos(since=2175)
+    repositories = github_instance.get_repos(since=start_in_repo_num)
     rate_limit = github_instance.rate_limiting
     print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
@@ -67,7 +67,6 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             print("This is the repo printing", repo)
             
             try:
-                # Try to access repo properties - this is where 403 errors occur
                 github_data_points = {
                     "message_id": self.request.id,
                     "got_data_in": todays_date if todays_date else None,
@@ -127,8 +126,9 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if remaining == 0:
+            if int(remaining) <= 4910:
                 print(f"Reached the rate limit of {rate_limit[1]} API calls")
+                break
 
             #     # start_in_repo_num = counter
             #     # github_instance = gh_two
