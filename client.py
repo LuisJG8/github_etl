@@ -11,6 +11,7 @@ import polars as pl
 # result = AsyncResult(celery_task_get_repos.id, app=app)
 
 today = datetime.utcnow().strftime("%Y-%m-%d")
+all_data = []
 
 print("Waiting for Celery task to complete")
 
@@ -19,11 +20,6 @@ try:
     response = get_github_data.apply_async()
     get_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Result: {get_data}")
-
-    if response.ready() == True:
-        print(response.ready())
-    else:
-        print(response.raedy)
 
 except Exception as e:
     print(f"Error: {e}")
@@ -39,3 +35,4 @@ else:
 
     df = pl.DataFrame(get_data)
     df.write_parquet(f"data/{today}/github_data.parquet", compression="zstd")
+    print("Valid Parquet data")

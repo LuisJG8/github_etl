@@ -5,17 +5,17 @@ from datetime import datetime
 
 class RabbitMQ_Data_Validation(BaseModel):
     # ===== MESSAGE METADATA =====
-    message_id: Optional[str] = Field(default=None, description="Unique message ID")
+    message_id: str
     got_data_in: str = Field(default_factory=lambda: datetime.now().isoformat())
     
     # ===== BASIC INFO =====
-    repo_id: int = Field(..., description="Repository ID")
-    name: str = Field(..., min_length=1, description="Repository name")
-    full_name: str = Field(..., description="Full name (owner/repo)")
+    repo_id: int
+    name: str 
+    full_name: str 
     description: Optional[str] = None
     github_url: Optional[str] = None
     homepage: Optional[str] = None
-    default_branch: str = Field(default="main")
+    default_branch: str
     
     # ===== POPULARITY METRICS =====
     stargazers_count: int = Field(default=0, ge=0)
