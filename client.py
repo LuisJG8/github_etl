@@ -15,7 +15,7 @@ today = datetime.utcnow().strftime("%Y-%m-%d")
 print("Waiting for Celery task to complete")
 
 try:
-    print('Getting the result')
+    print("Getting the result")
     response = get_github_data.apply_async()
     get_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Result: {get_data}")

@@ -160,5 +160,4 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
     logger.info(f"Processed {counter} repositories")
 
-
 logger.info("Worker module loaded")
