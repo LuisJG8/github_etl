@@ -12,9 +12,9 @@ class RabbitMQ_Data_Validation(BaseModel):
     repo_id: int
     name: str 
     full_name: str 
-    description: Optional[str] = None
-    github_url: Optional[str] = None
-    homepage: Optional[str] = None
+    description: Optional[str] = "no description"
+    github_url: Optional[str] = "no github url"
+    homepage: Optional[str] = "no homepage"
     default_branch: str
     
     # ===== POPULARITY METRICS =====
@@ -29,7 +29,7 @@ class RabbitMQ_Data_Validation(BaseModel):
     pushed_at: Optional[datetime] = None
     
     # ===== REPOSITORY SETTINGS =====
-    language: Optional[str] = None
+    language: Optional[str] = "no language"
     topics: List[str] = Field(default_factory=list)
     visibility: str = Field(default="public")
     size_kb: int = Field(default=0, ge=0)
@@ -40,5 +40,5 @@ class RabbitMQ_Data_Validation(BaseModel):
     is_private: bool = False
     
     # ===== OWNER INFO =====
-    owner_login: Optional[str] = None
-    owner_type: Optional[str] = None
+    owner_login: Optional[str] = "no owner login"
+    owner_type: Optional[str] = "no owner type"
