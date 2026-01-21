@@ -53,6 +53,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     counter = 0
     connection = None
     channel = None
+    mylist = []
 
     repositories = github_instance.get_repos(since=start_in_repo_num)
     rate_limit = github_instance.rate_limiting
@@ -81,9 +82,9 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
                     "forks_count": repo.forks_count if repo.forks_count else 0,
                     "watchers_count": repo.watchers_count if repo.watchers_count else 0,
                     "open_issues_count": repo.open_issues_count if repo.open_issues_count else 0,
-                    "created_at": repo.created_at if repo.created_at else "None",
-                    "updated_at": repo.updated_at if repo.updated_at else "None",
-                    "pushed_at": repo.pushed_at if repo.pushed_at else "None",
+                    "created_at": repo.created_at if repo.created_at else todays_date,
+                    "updated_at": repo.updated_at if repo.updated_at else todays_date,
+                    "pushed_at": repo.pushed_at if repo.pushed_at else todays_date,
                     "language": repo.language if repo.language else "None",
                     "topics": repo.topics if repo.topics else [],
                     "visibility": repo.visibility if repo.visibility else "public",
@@ -94,6 +95,8 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
                     "owner_login": repo.owner.login if repo.owner else "None",
                     "owner_type": repo.owner.type if repo.owner else "None",
                 }
+
+                mylist.append(github_data_points)
             
             except GithubException as ge:
                 if ge.status == 403:
@@ -126,7 +129,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(counter) == 3:
+            if int(counter) == 4990:
                 print(f"Reached the rate limit of {rate_limit[1]} API calls")
 
                 break
@@ -161,6 +164,6 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
     logger.info(f"Processed {counter} repositories")
 
-    return github_data_points
+    return mylist
 
 logger.info("Worker module loaded")
