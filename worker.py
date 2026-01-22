@@ -129,7 +129,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(counter) == 4990:
+            if int(counter) == 4900:
                 print(f"Reached the rate limit of {rate_limit[1]} API calls")
 
                 break
@@ -165,5 +165,11 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     logger.info(f"Processed {counter} repositories")
 
     return mylist
+
+
+# split the task above into small chunks to make it idempotent and faster
+@app.task
+def get_more_data():
+    pass
 
 logger.info("Worker module loaded")
