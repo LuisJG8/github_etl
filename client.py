@@ -7,9 +7,6 @@ from rb_queue.rabbitmq import consume_repos
 import polars as pl
 
 
-# celery_task_get_repos = get_github_data.delay()
-# result = AsyncResult(celery_task_get_repos.id, app=app)
-
 today = datetime.utcnow().strftime("%Y-%m-%d")
 
 print("Waiting for Celery task to complete")
