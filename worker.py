@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import boto3
 import time
-from celery import Celery
+from celery import Celery, group
 from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github, GithubException 
@@ -169,7 +169,13 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
 
 # split the task above into small chunks to make it idempotent and faster
 @app.task
-def get_more_data():
-    pass
+def distribute_tasks():
 
-logger.info("Worker module loaded")
+    jobs = [
+        get_github_data.s(start, 500)
+        for start in range(0, 5000, 500)
+    ]
+
+    group(jobs).apply_async()
+
+    pass
