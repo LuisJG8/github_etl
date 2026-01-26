@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from celery.result import AsyncResult
-from worker import get_github_data, app, gh
+from worker import get_github_data, app, gh, distribute_tasks
 from rb_queue.rabbitmq import consume_repos
 import polars as pl
 
@@ -13,9 +13,13 @@ print("Waiting for Celery task to complete")
 
 try:
     print("Getting the result")
-    response = get_github_data.apply_async()
+    response = distribute_tasks.apply_async()
     the_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Result: {the_data}")
+
+    # if distribute_tasks.apply_async() == True:   
+    #     print("A subtask failed")
+
 
 except Exception as e:
     print(f"Error: {e}")
