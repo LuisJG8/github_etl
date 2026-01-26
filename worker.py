@@ -129,7 +129,7 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(counter) == 4900:
+            if int(counter) == 10:
                 print(f"Reached the rate limit of {rate_limit[1]} API calls")
 
                 break
@@ -167,15 +167,16 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     return mylist
 
 
-# split the task above into small chunks to make it idempotent and faster
+# split the task above into small chunks to make it idempotent and faster (using group)
+# the way groups can be linked is by usign the chord construct in Celery,
+# this is important when the groups have an order
+# groups, chords
 @app.task
 def distribute_tasks():
 
-    jobs = [
+    jobs = group([
         get_github_data.s(start, 500)
         for start in range(0, 5000, 500)
-    ]
+    ])
 
-    group(jobs).apply_async()
-
-    pass
+    return jobs
