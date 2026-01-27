@@ -1,19 +1,20 @@
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from celery.result import AsyncResult
-from worker import get_github_data, app, gh, distribute_tasks
+from worker import build_repo_chord
 from rb_queue.rabbitmq import consume_repos
 import polars as pl
 
 
-today = datetime.utcnow().strftime("%Y-%m-%d")
+today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 print("Waiting for Celery task to complete")
 
+# test
 try:
     print("Getting the result")
-    response = distribute_tasks.apply_async()
+    response = build_repo_chord(total=5000, batch_size=500)
     the_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Result: {the_data}")
 
