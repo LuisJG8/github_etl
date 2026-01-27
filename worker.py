@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import boto3
 import time
-from celery import Celery, group
+from celery import Celery, chord
 from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github, GithubException 
@@ -49,7 +49,7 @@ gh, gh_two = Github(auth=auth), Github(auth=auth_two)
 
 # bind = True allows to get task data, like task id
 @app.task(bind=True)
-def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = gh):
+def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, github_instance: Github = gh):
     counter = 0
     connection = None
     channel = None
@@ -129,8 +129,8 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(counter) == 10:
-                print(f"Reached the rate limit of {rate_limit[1]} API calls")
+            if int(counter) >= int(2):
+                print(f"Reached batch size limit of {batch_size}")
 
                 break
 
@@ -167,16 +167,19 @@ def get_github_data(self, start_in_repo_num: int = 0, github_instance: Github = 
     return mylist
 
 
-# split the task above into small chunks to make it idempotent and faster (using group)
-# the way groups can be linked is by usign the chord construct in Celery,
-# this is important when the groups have an order
-# groups, chords
+# test
 @app.task
-def distribute_tasks():
+def aggregate_results(results):
+    merged = []
+    for batch in results:
+        if batch:
+            merged.extend(batch)
+    return merged
 
-    jobs = group([
-        get_github_data.s(start, 500)
-        for start in range(0, 5000, 500)
-    ])
 
-    return jobs
+def build_repo_chord(total: int = 10, batch_size: int = 1):
+    header = [
+        get_github_data.s(start, batch_size)
+        for start in range(0, total, batch_size)
+    ]
+    return chord(header)(aggregate_results.s())
