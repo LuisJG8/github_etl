@@ -18,10 +18,6 @@ try:
     the_data = response.get(timeout=3600)  # 1 hour timeout
     print(f"Result: {the_data}")
 
-    # if distribute_tasks.apply_async() == True:   
-    #     print("A subtask failed")
-
-
 except Exception as e:
     print(f"Error: {e}")
 

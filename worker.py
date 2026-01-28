@@ -4,7 +4,7 @@ from pathlib import Path
 import json
 import boto3
 import time
-from celery import Celery, chord
+from celery import Celery, group, chord
 from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github, GithubException 
@@ -129,7 +129,7 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(counter) >= int(2):
+            if int(counter) >= int(500):
                 print(f"Reached batch size limit of {batch_size}")
 
                 break
@@ -167,7 +167,6 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
     return mylist
 
 
-# test
 @app.task
 def aggregate_results(results):
     merged = []
@@ -177,9 +176,23 @@ def aggregate_results(results):
     return merged
 
 
-def build_repo_chord(total: int = 10, batch_size: int = 1):
+def build_repo_chord(total: int = 5000, batch_size: int = 500):
     header = [
         get_github_data.s(start, batch_size)
         for start in range(0, total, batch_size)
     ]
     return chord(header)(aggregate_results.s())
+
+
+
+# old code that did not work
+@app.task
+def distribute_tasks():
+
+    jobs = group([
+        get_github_data.s(start, 500)
+        for start in range(0, 5000, 500)
+    ])
+
+    return chord(jobs)()
+   
