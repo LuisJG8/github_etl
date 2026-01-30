@@ -36,9 +36,9 @@ services:
     build: .
     volumes:
       - ./data:/app/data
-    command: celery -A worker worker --loglevel=info --pool=solo --concurrency=4
+    command: celery -A worker worker --loglevel=info --concurrency=8
     env_file: ./config/.env
-    deploy:
+    deploy:  
       resources:
        limits:
          memory: 512M

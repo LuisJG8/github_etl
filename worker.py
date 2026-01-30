@@ -129,7 +129,7 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if int(counter) >= int(500):
+            if remaining_api_calls == 1:
                 print(f"Reached batch size limit of {batch_size}")
 
                 break
@@ -178,21 +178,19 @@ def aggregate_results(results):
 
 def build_repo_chord(total: int = 5000, batch_size: int = 500):
     header = [
-        get_github_data.s(start, batch_size)
-        for start in range(0, total, batch_size)
+        get_github_data.s(start, batch_size) for start in range(0, total, batch_size)
     ]
     return chord(header)(aggregate_results.s())
 
 
-
 # old code that did not work
-@app.task
-def distribute_tasks():
+# @app.task
+# def distribute_tasks():
 
-    jobs = group([
-        get_github_data.s(start, 500)
-        for start in range(0, 5000, 500)
-    ])
+#     jobs = group([
+#         get_github_data.s(start, 500)
+#         for start in range(0, 5000, 500)
+#     ])
 
-    return chord(jobs)()
-   
+#     return chord(jobs)()
+    
