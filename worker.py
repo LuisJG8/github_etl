@@ -15,7 +15,7 @@ load_dotenv()
 
 
 logger = get_task_logger(__name__)
-todays_date = datetime.now().strftime("%m-%d-%Y")
+todays_date = datetime.now().isoformat()
 S3_BUCKET_NAME = "github-etl-data-bucket"
 
 
@@ -129,12 +129,13 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if remaining == 2:
-                print(f"Reached batch size limit of {batch_size}")
+            if counter >= batch_size:
+                print(f"Reached batch size of {batch_size}")
                 break
 
-            #     # start_in_repo_num = counter
-            #     # github_instance = gh_two
+            if remaining < 100:
+                print(f"Rate limit approaching ({remaining}). Stopping worker.")
+                break
 
             #     # raise self.retry(countdown=3600)
             #     break
@@ -192,4 +193,3 @@ def build_repo_chord(total: int = 5000, batch_size: int = 500):
 #     ])
 
 #     return chord(jobs)()
-    
