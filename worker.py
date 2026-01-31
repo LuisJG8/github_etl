@@ -123,15 +123,14 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             
             except Exception as validation_error:
                 print(f"Validation error for repo {github_data_points.get('full_name')}: {validation_error}")
-                print("Skipping this repo and continuing...")
+                print("Skipping this repo and continuing")
                 continue
 
             remaining_api_calls = github_instance.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if remaining_api_calls == 1:
+            if remaining == 2:
                 print(f"Reached batch size limit of {batch_size}")
-
                 break
 
             #     # start_in_repo_num = counter
