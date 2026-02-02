@@ -7,7 +7,7 @@ from rb_queue.rabbitmq import consume_repos
 import polars as pl
 
 
-today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+today = datetime.now().strftime("%Y-%m-%d")
 
 print("Waiting for Celery task to complete")
 

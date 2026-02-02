@@ -15,7 +15,7 @@ load_dotenv()
 
 
 logger = get_task_logger(__name__)
-todays_date = datetime.now().isoformat()
+todays_date = datetime.now()
 S3_BUCKET_NAME = "github-etl-data-bucket"
 
 
@@ -70,7 +70,7 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             try:
                 github_data_points = {
                     "message_id": self.request.id,
-                    "got_data_in": todays_date if todays_date else datetime.now().isoformat(),
+                    "got_data_in": todays_date if todays_date else datetime.now(),
                     "repo_id": repo.id if repo.id is not None else 0,
                     "name": repo.name if repo.name else "unknown",
                     "full_name": repo.full_name if repo.full_name else "unknown/unknown",

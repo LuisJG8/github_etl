@@ -6,7 +6,7 @@ from datetime import datetime
 class RabbitMQ_Data_Validation(BaseModel):
     # ===== MESSAGE METADATA =====
     message_id: str
-    got_data_in: str = Field(default_factory=lambda: datetime.now().isoformat())
+    got_data_in: datetime = Field(default_factory=lambda: datetime.now())
     
     # ===== BASIC INFO =====
     repo_id: int
