@@ -11,7 +11,6 @@ today = datetime.now().strftime("%Y-%m-%d")
 
 print("Waiting for Celery task to complete")
 
-# test
 try:
     print("Getting the result")
     response = build_repo_chord(total=5000, batch_size=500)

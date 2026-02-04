@@ -1,0 +1,14 @@
+services:
+  api-server:
+    networks:
+      - etl-shared
+  scheduler:
+    networks:
+      - etl-shared
+  triggerer:
+    networks:
+      - etl-shared
+
+networks:
+  etl-shared:
+    external: true
