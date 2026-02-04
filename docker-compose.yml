@@ -18,6 +18,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+    networks:
+      - etl-shared
 
   redis:
     image: redis:7-alpine
@@ -31,6 +33,8 @@ services:
       retries: 5
       start_period: 30s
     restart: on-failure
+    networks:
+      - etl-shared
 
   celery_worker:
     build: .
@@ -56,6 +60,8 @@ services:
       redis:
         condition: service_healthy
     restart: on-failure
+    networks:
+      - etl-shared
 
   flower:
     image: mher/flower
@@ -69,6 +75,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - etl-shared
       
   client:
     build: .
@@ -83,6 +91,8 @@ services:
         condition: service_healthy
       celery_worker:
         condition: service_healthy
+    networks:
+      - etl-shared
 
 
   # airflow-init:
@@ -131,3 +141,7 @@ services:
 volumes:
   rabbitmq_data:
   redis_data:
+
+networks:
+  etl-shared:
+    external: true
