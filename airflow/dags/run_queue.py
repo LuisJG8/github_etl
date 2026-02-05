@@ -21,8 +21,9 @@ def run_queue():
     
     @task
     def run_the_queue():
-        app.send_task("worker.get_github_data", args=[0, 500])
+        app.send_task("worker.get_data_from_queue", args=[100, 500])
 
+        
     run_the_queue()
 
 
