@@ -3,12 +3,12 @@ import pika
 from pathlib import Path
 import json
 import boto3
-import time
 from celery import Celery, group, chord
 from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github, GithubException 
 from dotenv import load_dotenv
+from client import get_data_from_queue
 from pydantic_models.github import RabbitMQ_Data_Validation
 from rb_queue.rabbitmq import get_connection, QUEUE_NAME
 load_dotenv()
@@ -181,6 +181,13 @@ def build_repo_chord(total: int = 5000, batch_size: int = 500):
         get_github_data.s(start, batch_size) for start in range(0, total, batch_size)
     ]
     return chord(header)(aggregate_results.s())
+
+
+@app.task
+def run_queue_and_save(total: int = 5000, batch_size: int = 500):
+    return get_data_from_queue(total=total, batch_size=batch_size)
+
+
 
 
 # old code that did not work
