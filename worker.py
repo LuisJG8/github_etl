@@ -8,7 +8,6 @@ from celery.utils.log import get_task_logger
 from datetime import datetime
 from github import Auth, Github, GithubException 
 from dotenv import load_dotenv
-from client import get_data_from_queue
 from pydantic_models.github import RabbitMQ_Data_Validation
 from rb_queue.rabbitmq import get_connection, QUEUE_NAME
 load_dotenv()
@@ -133,7 +132,7 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
                 print(f"Reached batch size of {batch_size}")
                 break
 
-            if remaining < 100:
+            if remaining < 20:
                 print(f"Rate limit approaching ({remaining}). Stopping worker.")
                 break
 
@@ -181,13 +180,6 @@ def build_repo_chord(total: int = 5000, batch_size: int = 500):
         get_github_data.s(start, batch_size) for start in range(0, total, batch_size)
     ]
     return chord(header)(aggregate_results.s())
-
-
-@app.task
-def run_queue_and_save(total: int = 5000, batch_size: int = 500):
-    return get_data_from_queue(total=total, batch_size=batch_size)
-
-
 
 
 # old code that did not work
