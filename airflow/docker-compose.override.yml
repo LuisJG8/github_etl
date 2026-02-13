@@ -1,13 +1,32 @@
 services:
   api-server:
-    networks:
-      - etl-shared
+    volumes:
+      - /Users/luisgonzalez/Documents/code/etl pipeline/github_etl:/usr/local/airflow/project
+    environment:
+      PYTHONPATH: /usr/local/airflow/project
+    networks: [etl-shared]
+
+  dag-processor:
+    volumes:
+      - /Users/luisgonzalez/Documents/code/etl pipeline/github_etl:/usr/local/airflow/project
+    environment:
+      PYTHONPATH: /usr/local/airflow/project
+    networks: [etl-shared]
+
   scheduler:
-    networks:
-      - etl-shared
+    volumes:
+      - /Users/luisgonzalez/Documents/code/etl pipeline/github_etl:/usr/local/airflow/project
+    environment:
+      PYTHONPATH: /usr/local/airflow/project
+    networks: [etl-shared]
+
   triggerer:
-    networks:
-      - etl-shared
+    volumes:
+      - /Users/luisgonzalez/Documents/code/etl pipeline/github_etl:/usr/local/airflow/project
+    environment:
+      PYTHONPATH: /usr/local/airflow/project
+    networks: [etl-shared]
+
 
 networks:
   etl-shared:
