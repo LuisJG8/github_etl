@@ -1,0 +1,23 @@
+pipeline:
+  inputs:
+    - name: dummy
+      tag: workshop.info
+      dummy: '{"message": "INFO message"}'
+
+    - name: dummy
+      tag: workshop.info
+      dummy: '{"message": "ERROR message"}'
+
+  outputs:
+    - name: stdout
+      match: '*'
+      format: json_lines
+
+    - name: file
+      file: /data
+      match: '*.info'
+      file: workshop-INFO.log
+      format: json_lines
+
+
+
