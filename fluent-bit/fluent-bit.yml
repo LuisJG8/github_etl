@@ -14,10 +14,7 @@ pipeline:
       format: json_lines
 
     - name: file
-      file: /data
       match: '*.info'
+      path: /data
       file: workshop-INFO.log
-      format: json_lines
-
-
-
+      format: json
