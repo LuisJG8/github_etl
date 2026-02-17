@@ -27,7 +27,7 @@ def consume_repos(callback):
     channel = connection.channel()
     channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
-    # properties is needed becayse channel.basic_consume expects 4 parameters, properties does not have
+    # properties is needed because channel.basic_consume expects 4 parameters, properties does not have
     # any value but it is required to meet the 4 parameters requirement
     def on_message(ch, method, properties, body):
         try:
