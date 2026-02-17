@@ -1,3 +1,4 @@
+import logging
 import os
 import pika
 from pathlib import Path
@@ -10,6 +11,7 @@ from github import Auth, Github, GithubException
 from dotenv import load_dotenv
 from pydantic_models.github import RabbitMQ_Data_Validation
 from rb_queue.rabbitmq import get_connection, QUEUE_NAME
+import celery_logging_config  # registers Celery logging signal handlers
 load_dotenv()
 
 
@@ -25,14 +27,12 @@ s3_client = boto3.client(
     region_name=os.getenv("AWS_REGION", "us-east-1")
 )
 
-
 def save_to_s3(data, file_directory):
     s3_client.put_object(
         Bucket=S3_BUCKET_NAME,
         Key=file_directory,
         Body=json.dumps(data, default=str)
     )
-
 
 app = Celery(
     'github_repos',
@@ -41,22 +41,21 @@ app = Celery(
 )
 
 
-api_token, api_token_two = os.getenv("GITHUB_API_TOKEN"), os.getenv("GITHUB_API_TOKEN_SECOND_ACCOUNT")
-auth, auth_two = Auth.Token(api_token), Auth.Token(api_token_two)
-gh, gh_two = Github(auth=auth), Github(auth=auth_two)
-
-
 # bind = True allows to get task data, like task id
 @app.task(bind=True)
-def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, github_instance: Github = gh):
+def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500):
     counter = 0
     connection = None
     channel = None
     mylist = []
 
-    repositories = github_instance.get_repos(since=start_in_repo_num)
-    rate_limit = github_instance.rate_limiting
-    print(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
+    api_token, api_token_two = os.getenv("GITHUB_API_TOKEN"), os.getenv("GITHUB_API_TOKEN_SECOND_ACCOUNT")
+    auth, auth_two = Auth.Token(api_token), Auth.Token(api_token_two)
+    gh, gh_two = Github(auth=auth), Github(auth=auth_two)
+
+    repositories = gh.get_repos(since=start_in_repo_num)
+    rate_limit = gh.rate_limiting
+    logger.info(f"Rate limit: {rate_limit[0]} remaining / {rate_limit[1]} total")
 
     try:
         connection = get_connection()
@@ -64,7 +63,7 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
         channel.queue_declare(queue=QUEUE_NAME, durable=True)
 
         for repo in repositories:
-            print(f"This is the repo printing: {repo}")
+            logger.info(f"This is the repo printing: {repo}")
             
             try:
                 github_data_points = {
@@ -99,12 +98,12 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             
             except GithubException as ge:
                 if ge.status == 403:
-                    print(f"Skipping blocked repo (403): {repo.full_name if hasattr(repo, 'full_name') else 'unknown'}")
+                    logging.exception(f"Skipping blocked repo (403): {repo.full_name if hasattr(repo, 'full_name') else 'unknown'}")
                 else:
-                    print(f"GitHub API error {ge.status} for repo, skipping...")
+                    logging.exception(f"GitHub API error {ge.status} for repo, skipping...")
                 continue
             except Exception as e:
-                print(f"Error accessing repo data: {e}, skipping...")
+                logging.exception(f"Error accessing repo data: {e}, skipping...")
                 continue
 
             try:
@@ -118,22 +117,25 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
                 )
 
                 counter += 1
-                print(github_data_points)
+                logger.info(github_data_points)
             
             except Exception as validation_error:
                 print(f"Validation error for repo {github_data_points.get('full_name')}: {validation_error}")
                 print("Skipping this repo and continuing")
                 continue
 
-            remaining_api_calls = github_instance.rate_limiting
+            remaining_api_calls = gh.rate_limiting
             remaining = remaining_api_calls[0]
 
+            if counter >= 5:
+                break
+
             if counter >= batch_size:
-                print(f"Reached batch size of {batch_size}")
+                logger.info(f"Reached batch size of {batch_size}")
                 break
 
             if remaining < 20:
-                print(f"Rate limit approaching ({remaining}). Stopping worker.")
+                logger.info(f"Rate limit approaching ({remaining}). Stopping worker.")
                 break
 
             #     # raise self.retry(countdown=3600)
@@ -144,26 +146,24 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500, git
             #     # github account and it's credentials to have 1000 more API calls
 
             else:
-                print("Remaining api calls")
-                print(remaining)
+                logger.info("Remaining api calls")
+                logger.info(remaining)
 
-                print("Count")
-                print(counter)
+                logger.info("Count")
+                logger.info(counter)
 
     except Exception as e:
-        print("Error", e)
+        logger.exception("Error", e)
 
     finally:
         if connection:
             connection.close()
         else:
-            print("The connection does not exist")
+            logger.info("The connection does not exist")
 
 
     # s3_url = save_to_s3(data=repo_collection, file_directory="github_repos/test.json")
     logger.info(f"Processed {counter} repositories")
-
-    return mylist
 
 
 @app.task
@@ -180,15 +180,3 @@ def build_repo_chord(total: int = 5000, batch_size: int = 500):
         get_github_data.s(start, batch_size) for start in range(0, total, batch_size)
     ]
     return chord(header)(aggregate_results.s())
-
-
-# old code that did not work
-# @app.task
-# def distribute_tasks():
-
-#     jobs = group([
-#         get_github_data.s(start, 500)
-#         for start in range(0, 5000, 500)
-#     ])
-
-#     return chord(jobs)()

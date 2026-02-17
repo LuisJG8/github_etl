@@ -42,6 +42,11 @@ services:
       - ./data:/app/data
     command: celery -A worker worker --loglevel=info --concurrency=8
     env_file: ./config/.env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
     deploy:  
       resources:
        limits:

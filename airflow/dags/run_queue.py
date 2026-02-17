@@ -24,8 +24,8 @@ app = Celery(
     tags=["celery_queue"],
     max_consecutive_failed_dag_runs=3
 )
-def run_github_data_queue():
-            
+def run_queue():
+
     @task(do_xcom_push=True, multiple_outputs=True)
     def check_rate_limit(**context):
         api_token = os.getenv("GITHUB_API_TOKEN")
@@ -38,15 +38,14 @@ def run_github_data_queue():
         return {
                 "remaining": rate_limit[0], 
                 "total": rate_limit[1]
-                }
+               }
 
     @task
-    def run_queue(**context):
+    def send_task_to_celery_worker(**context):
         rate_limit = context["ti"].xcom_pull(task_ids="check_rate_limit", key="remaining")
         max_total_api_calls = context["ti"].xcom_pull(task_ids="check_rate_limit", key="total")
 
-
-        app.send_task("worker.get_github_data")
+        app.send_task("worker.get_github_data", kwargs={"start_in_repo_num": 1000, "batch_size": 500})
 
         print("celery_worker")
     
@@ -57,7 +56,7 @@ def run_github_data_queue():
             
             
 
-    check_rate_limit() >> run_queue() >> save_data_from_queue()
+    check_rate_limit() >> send_task_to_celery_worker() >> save_data_from_queue()
 
 
-run_github_data_queue()
+run_queue()
