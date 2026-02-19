@@ -116,7 +116,6 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500):
                     properties=pika.BasicProperties(delivery_mode=2)
                 )
 
-                counter += 1
                 logger.info(github_data_points)
             
             except Exception as validation_error:
@@ -127,8 +126,6 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500):
             remaining_api_calls = gh.rate_limiting
             remaining = remaining_api_calls[0]
 
-            if counter >= 5:
-                break
 
             if counter >= batch_size:
                 logger.info(f"Reached batch size of {batch_size}")
@@ -151,6 +148,11 @@ def get_github_data(self, start_in_repo_num: int = 0, batch_size: int = 500):
 
                 logger.info("Count")
                 logger.info(counter)
+
+                counter += 1
+
+                if counter >= 25:
+                    break
 
     except Exception as e:
         logger.exception("Error", e)

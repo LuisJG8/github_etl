@@ -1,5 +1,7 @@
+from email.policy import default
 import os
 from socket import timeout
+from tracemalloc import start
 from airflow.sdk import dag, task
 from pendulum import datetime
 from celery import Celery
@@ -7,14 +9,14 @@ from github import Auth, Github, GithubException
 from client import get_data_from_queue
 from datetime import timedelta
 import time
+from airflow.models import Variable
+from worker import app
 
-
-app = Celery(
-    'airflow_client',
-    broker = os.getenv('CELERY_BROKER_URL'),
-    backend = os.getenv('CELERY_BACKEND_URL')
-)
-
+# app = Celery(
+#     'airflow_client',
+#     broker = os.getenv('CELERY_BROKER_URL'),
+#     backend = os.getenv('CELERY_BACKEND_URL')
+# )
 
 @dag(
     schedule="@hourly",
@@ -45,15 +47,18 @@ def run_queue():
         rate_limit = context["ti"].xcom_pull(task_ids="check_rate_limit", key="remaining")
         max_total_api_calls = context["ti"].xcom_pull(task_ids="check_rate_limit", key="total")
 
-        app.send_task("worker.get_github_data", kwargs={"start_in_repo_num": 1000, "batch_size": 500})
+        start_with_repo_number = int(Variable.get("github_repo_number", default_var = "0"))
+        start_with_repo_number += 500
 
-        print("celery_worker")
+        app.send_task("worker.get_github_data", kwargs={"start_in_repo_num": start_with_repo_number, "batch_size": 500})
+
+        Variable.set(key= "github_repo_number", value= str(start_with_repo_number))
+        print("celery_worker")                                
     
     @task
     def save_data_from_queue():
 
         get_data_from_queue()
-            
             
 
     check_rate_limit() >> send_task_to_celery_worker() >> save_data_from_queue()
